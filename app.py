@@ -58,7 +58,7 @@ st.write(
 st.markdown("---")
 
 # ---------------- CHALLENGE MODE ----------------
-st.subheader("🎯 Challenge Mode")
+st.subheader("Challenge Mode")
 if "challenge" not in st.session_state:
     st.session_state.challenge = None
 
