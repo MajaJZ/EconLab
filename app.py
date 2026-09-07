@@ -206,7 +206,7 @@ if scenario["narrative"]:
 st.markdown("---")
 
 # ---- CHALLENGE / TARGETS ----
-st.subheader("🎯 Challenge Mode")
+st.subheader("Challenge Mode")
 if "challenge" not in st.session_state:
     st.session_state.challenge = None
 
@@ -340,7 +340,7 @@ if "results" in st.session_state:
             score += 30.0 * max(0.0, ch["unemployment"] / res["unemployment"]) if res["unemployment"] > 0 else 0.0
         score = round(min(100.0, score), 1)
         st.markdown("---")
-        st.subheader("🎯 Challenge Score")
+        st.subheader("Challenge Score")
         st.write(f"**Your score: {score}/100**")
         if score >= 80:
             st.success("Excellent! You hit almost all targets.")
