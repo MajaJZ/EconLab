@@ -244,7 +244,7 @@ st.markdown("---")
 
 # ---- LESSON MODE ----
 if st.session_state.lesson_mode:
-    st.subheader("📚 Lesson Mode")
+    st.subheader("Lesson Mode")
     st.markdown("""
     **Goal:** Learn how to control inflation without causing a recession.
     
