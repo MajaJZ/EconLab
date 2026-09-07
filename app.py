@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import random
 from economic_model import simulate_economy, load_baseline
 
 st.set_page_config(
@@ -25,6 +26,10 @@ st.markdown(
         font-size: 20px;
         color: #666;
         margin-bottom: 30px;
+    }
+    .result-label {
+        font-weight: bold;
+        font-size: 18px;
     }
     </style>
     """,
@@ -52,6 +57,36 @@ st.write(
 
 st.markdown("---")
 
+# ---------------- CHALLENGE MODE ----------------
+st.subheader("🎯 Challenge Mode")
+if "challenge" not in st.session_state:
+    st.session_state.challenge = None
+
+col_challenge1, col_challenge2, col_challenge3 = st.columns([1,1,1])
+with col_challenge1:
+    if st.button("Generate Challenge"):
+        # Random target ranges based on baseline
+        target_gdp = round(random.uniform(baseline["gdp_growth"] + 1.0, baseline["gdp_growth"] + 3.0), 1)
+        target_inflation = round(random.uniform(max(0.5, baseline["inflation"] - 1.5), baseline["inflation"] + 0.5), 1)
+        target_unemployment = round(random.uniform(max(1.0, baseline["unemployment"] - 2.0), baseline["unemployment"] - 0.5), 1)
+        st.session_state.challenge = {
+            "gdp_growth": target_gdp,
+            "inflation": target_inflation,
+            "unemployment": target_unemployment,
+        }
+        st.success("New challenge generated!")
+
+if st.session_state.challenge:
+    ch = st.session_state.challenge
+    st.write(f"**Target GDP growth:** ≥ {ch['gdp_growth']}%")
+    st.write(f"**Target inflation:** ≤ {ch['inflation']}%")
+    st.write(f"**Target unemployment:** ≤ {ch['unemployment']}%")
+else:
+    st.write("Click **Generate Challenge** to get your targets.")
+
+st.markdown("---")
+
+# ---------------- POLICY SLIDERS ----------------
 st.subheader("Your Policy")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -146,6 +181,40 @@ if "results" in st.session_state:
         st.write(f"**{res['real_wage_growth']:.1f}%**")
         change = res["real_wage_growth_change"]
         st.write(f"({'+' if change >= 0 else ''}{change:.1f}% vs baseline)")
+
+    # ---------------- SCORING ----------------
+    if st.session_state.challenge:
+        ch = st.session_state.challenge
+        score = 0.0
+        # GDP: target is >= ch['gdp_growth']
+        if res["gdp_growth"] >= ch["gdp_growth"]:
+            score += 40.0
+        else:
+            # partial score
+            score += 40.0 * max(0.0, res["gdp_growth"] / ch["gdp_growth"]) if ch["gdp_growth"] > 0 else 40.0
+
+        # Inflation: target is <= ch['inflation']
+        if res["inflation"] <= ch["inflation"]:
+            score += 30.0
+        else:
+            score += 30.0 * max(0.0, ch["inflation"] / res["inflation"]) if res["inflation"] > 0 else 0.0
+
+        # Unemployment: target is <= ch['unemployment']
+        if res["unemployment"] <= ch["unemployment"]:
+            score += 30.0
+        else:
+            score += 30.0 * max(0.0, ch["unemployment"] / res["unemployment"]) if res["unemployment"] > 0 else 0.0
+
+        score = round(min(100.0, score), 1)
+        st.markdown("---")
+        st.subheader("🎯 Challenge Score")
+        st.write(f"**Your score: {score}/100**")
+        if score >= 80:
+            st.success("Excellent! You hit almost all targets.")
+        elif score >= 60:
+            st.warning("Good effort, but you could improve some indicators.")
+        else:
+            st.error("Your policy missed most targets. Try different settings!")
 
     st.markdown("---")
     st.subheader("Visual Comparison")
