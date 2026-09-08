@@ -292,7 +292,31 @@ if run_button:
         "vat": vat,
         "gov_spending_change": gov_spending_change,
     }
-    results = simulate_economy(country if scenario["baseline_override"] is None else "Scenario", params, st.session_state.coeffs)
+    
+    # For scenarios, use a default country for the model, then override baseline
+    model_country = country if scenario["baseline_override"] is None else "Poland"
+    
+    # If scenario has baseline override, we need to temporarily modify the model's baseline
+    if scenario["baseline_override"] is not None:
+        # Save original load_baseline function
+        import economic_model
+        
+        # Create a wrapper that returns the scenario baseline
+        def scenario_baseline_loader(country_name):
+            return scenario["baseline_override"].copy()
+        
+        # Temporarily replace the function
+        original_load_baseline = economic_model.load_baseline
+        economic_model.load_baseline = scenario_baseline_loader
+        
+        # Run simulation
+        results = simulate_economy(model_country, params, st.session_state.coeffs)
+        
+        # Restore original function
+        economic_model.load_baseline = original_load_baseline
+    else:
+        results = simulate_economy(model_country, params, st.session_state.coeffs)
+    
     st.session_state["results"] = results
 
 if "results" in st.session_state:
