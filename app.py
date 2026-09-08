@@ -319,32 +319,52 @@ if run_button:
     
     st.session_state["results"] = results
 
-if "results" in st.session_state:
+if "results" in st.session_state and st.session_state["results"] is not None:
     res = st.session_state["results"]
+    
+    # Debug: print the keys to help identify issues
+    # st.write("Debug - Result keys:", list(res.keys()))
 
     col1, col2, col3, col4 = st.columns(4)
 
     # Helper to display metric with tooltip
     def show_metric(label, value, change, tooltip_text, progress_range, progress_value):
-        with col1 if label == "GDP Growth" else col2 if label == "Inflation" else col3 if label == "Unemployment" else col4:
+        # Determine which column to use
+        if label == "GDP Growth":
+            column = col1
+        elif label == "Inflation":
+            column = col2
+        elif label == "Unemployment":
+            column = col3
+        else:
+            column = col4
+            
+        with column:
             st.markdown(f'<div class="result-label">{label} <span class="tooltip">?<span class="tooltiptext">{tooltip_text}</span></span></div>', unsafe_allow_html=True)
             progress = (progress_value - progress_range[0]) / (progress_range[1] - progress_range[0])
             st.progress(min(1.0, max(0.0, progress)))
             st.write(f"**{value:.1f}%**")
             st.write(f"({'+' if change >= 0 else ''}{change:.1f}% vs baseline)")
 
-    show_metric("GDP Growth", res["gdp_growth"], res["gdp_growth_change"],
-                "Gross Domestic Product growth rate. Higher is generally better, but too high can cause inflation.",
-                (-5, 15), res["gdp_growth"])
-    show_metric("Inflation", res["inflation"], res["inflation_change"],
-                "General increase in prices. Central banks typically target around 2%.",
-                (-2, 20), res["inflation"])
-    show_metric("Unemployment", res["unemployment"], res["unemployment_change"],
-                "Percentage of labor force without jobs. Lower is better, but very low can lead to wage inflation.",
-                (1, 30), res["unemployment"])
-    show_metric("Real Wage Growth", res["real_wage_growth"], res["real_wage_growth_change"],
-                "Increase in wages adjusted for inflation. Positive means workers' purchasing power is rising.",
-                (-5, 10), res["real_wage_growth"])
+    # Check if all required keys exist
+    required_keys = ["gdp_growth", "inflation", "unemployment", "real_wage_growth",
+                     "gdp_growth_change", "inflation_change", "unemployment_change", "real_wage_growth_change"]
+    
+    if all(key in res for key in required_keys):
+        show_metric("GDP Growth", res["gdp_growth"], res["gdp_growth_change"],
+                    "Gross Domestic Product growth rate. Higher is generally better, but too high can cause inflation.",
+                    (-5, 15), res["gdp_growth"])
+        show_metric("Inflation", res["inflation"], res["inflation_change"],
+                    "General increase in prices. Central banks typically target around 2%.",
+                    (-2, 20), res["inflation"])
+        show_metric("Unemployment", res["unemployment"], res["unemployment_change"],
+                    "Percentage of labor force without jobs. Lower is better, but very low can lead to wage inflation.",
+                    (1, 30), res["unemployment"])
+        show_metric("Real Wage Growth", res["real_wage_growth"], res["real_wage_growth_change"],
+                    "Increase in wages adjusted for inflation. Positive means workers' purchasing power is rising.",
+                    (-5, 10), res["real_wage_growth"])
+    else:
+        st.error("Error: Results are missing some keys. Please try running the experiment again.")
 
     # Scoring (same as before, but adapted if challenge exists)
     if st.session_state.challenge:
